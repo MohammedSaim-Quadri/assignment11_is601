@@ -66,5 +66,5 @@ pytest --cov=app
 This repository is configured with a full CI/CD pipeline using GitHub Actions. On every push to main, the following jobs are executed:
 - Test: Spins up a Postgres service, installs dependencies, and runs the entire pytest suite.
 - Security: Builds the Docker image and scans it for CRITICAL or HIGH vulnerabilities using Trivy.
-- Deploy: If the tests and scan pass, the pipeline pushes the validated image to Docker Hub.
+- Deploy: If the tests and scan pass, the pipeline pushes the validated image to Docker Hub
 Docker Hub Repository Link:https://hub.docker.com/r/saimquadri/601_module11
