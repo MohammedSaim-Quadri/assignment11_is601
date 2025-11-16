@@ -19,7 +19,11 @@ from app.models.user import User
 from app.models.calculation import Calculation
 from app.core.config import settings
 from app.database_init import init_db, drop_db
+import os
 
+# Override DATABASE_URL for local testing if not already set
+if "DATABASE_URL" not in os.environ:
+    os.environ["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5432/calculator_db"
 # ======================================================================================
 # Logging Configuration
 # ======================================================================================
@@ -104,7 +108,7 @@ class ServerStartupError(Exception):
 # ======================================================================================
 # Primary Database Fixtures
 # ======================================================================================
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def setup_test_database(request):
     """
     Initialize the test database once per session:
@@ -138,7 +142,7 @@ def setup_test_database(request):
         logger.info("Dropped test database tables.")
 
 @pytest.fixture
-def db_session(request) -> Generator[Session, None, None]:
+def db_session(request, setup_test_database) -> Generator[Session, None, None]:
     """
     Provide a test-scoped database session.
     By default, truncates all tables after each test to ensure isolation,
@@ -212,7 +216,7 @@ def seed_users(db_session: Session, request) -> List[User]:
 # FastAPI Server Fixture (Optional)
 # ======================================================================================
 @pytest.fixture(scope="session")
-def fastapi_server():
+def fastapi_server(setup_test_database):
     """
     Start and manage a FastAPI test server, if needed for integration tests.
     """
@@ -220,10 +224,14 @@ def fastapi_server():
     logger.info("Starting test server...")
 
     try:
+        server_env = os.environ.copy()
+        server_env["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5432/calculator_db"
+
         process = subprocess.Popen(
             ['python', 'main.py'],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            env=server_env  # <-- Pass the new environment
         )
         if not wait_for_server(server_url, timeout=30):
             raise ServerStartupError("Failed to start test server")
